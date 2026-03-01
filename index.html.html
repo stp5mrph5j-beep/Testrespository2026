@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daily Quests">
+<title>Daily Quest — Night City</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Barlow+Condensed:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg:       #0e0c0b;
+    --panel:    #141210;
+    --panel2:   #1a1714;
+    --border:   #2a2420;
+    --border2:  #3a2e28;
+    --red:      #c1440e;
+    --red-dim:  #7a2a08;
+    --red-glow: rgba(193,68,14,0.25);
+    --orange:   #e05c1a;
+    --text:     #b8a898;
+    --text-dim: #6a5a50;
+    --text-hi:  #d8c8b8;
+    --white:    #e8ddd4;
+  }
+
+  body {
+    background: var(--bg);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    overflow: hidden;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 3px,
+      rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.7) 100%);
+    pointer-events: none;
+    z-index: 98;
+  }
+
+  .container {
+    width: 700px;
+    position: relative;
+  }
+
+  .bg-grid {
+    position: absolute;
+    inset: -40px;
+    background-image:
+      linear-gradient(rgba(193,68,14,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(193,68,14,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(ellipse, black 30%, transparent 70%);
+  }
+
+  .card {
+    position: relative;
+    z-index: 1;
+    background: var(--panel);
+    border: 1px solid var(--border2);
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--orange), var(--red-dim), transparent 80%);
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-bar {
+    width: 4px;
+    background: var(--red);
+    flex-shrink: 0;
+    box-shadow: 2px 0 12px var(--red-glow);
+  }
+
+  .header-inner {
+    flex: 1;
+    padding: 20px 24px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .sys-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .title {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    line-height: 1;
+    position: relative;
+  }
+
+  .title::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0;
+    width: 60%;
+    height: 2px;
+    background: var(--red);
+    box-shadow: 0 0 8px var(--red-glow);
+  }
+
+  .title-sub {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-dim);
+    letter-spacing: 5px;
+    margin-top: 10px;
+    text-transform: uppercase;
+  }
+
+  .header-right { text-align: right; padding-top: 4px; }
+
+  .date-line {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    line-height: 2;
+  }
+
+  .date-line strong { color: var(--text); font-weight: 400; }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    border: 1px solid var(--red-dim);
+    padding: 4px 10px;
+    background: rgba(193,68,14,0.08);
+  }
+
+  .status-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--red);
+    box-shadow: 0 0 6px var(--red);
+    animation: pulse 2s infinite;
+  }
+
+  .status-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--red);
+    letter-spacing: 3px;
+  }
+
+  /* DISTRICT BANNER */
+  .district-banner {
+    background: var(--panel2);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px 10px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .district-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+  }
+
+  .district-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-hi);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .district-right { display: flex; gap: 20px; }
+
+  .stat-chip { text-align: center; }
+
+  .stat-chip-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 2px;
+  }
+
+  .stat-chip-val {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--orange);
+    letter-spacing: 1px;
+  }
+
+  .stat-chip-val.red { color: var(--red); }
+
+  /* SECTION HDR */
+  .section-hdr {
+    padding: 14px 24px 6px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-hdr-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 5px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    flex-shrink: 0;
+  }
+
+  .section-hdr-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border2), transparent);
+  }
+
+  /* QUESTS */
+  .quests { padding: 4px 20px 12px 20px; }
+
+  .quest-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 14px;
+    margin-bottom: 4px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    position: relative;
+  }
+
+  .quest-item::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--border2);
+    transition: background 0.15s;
+  }
+
+  .quest-item:hover { border-color: var(--border2); background: rgba(193,68,14,0.05); }
+  .quest-item:hover::before { background: var(--red-dim); }
+
+  .quest-item.done { border-color: rgba(193,68,14,0.2); background: rgba(193,68,14,0.04); opacity: 0.65; }
+  .quest-item.done::before { background: var(--red); }
+
+  .quest-check {
+    width: 18px; height: 18px;
+    border: 1.5px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--red);
+    font-size: 10px;
+    font-weight: 700;
+    transition: all 0.15s;
+    background: rgba(0,0,0,0.3);
+  }
+
+  .quest-item.done .quest-check {
+    border-color: var(--red);
+    background: rgba(193,68,14,0.2);
+  }
+
+  .quest-info { flex: 1; }
+
+  .quest-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-hi);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .quest-item.done .quest-name {
+    color: var(--text-dim);
+    text-decoration: line-through;
+    text-decoration-color: var(--red-dim);
+  }
+
+  .quest-details { display: flex; gap: 12px; margin-top: 3px; align-items: center; }
+
+  .quest-loc {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+  .quest-loc::before { content: '▸ '; color: var(--red-dim); }
+
+  .quest-tag {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    padding: 1px 5px;
+    border: 1px solid;
+    text-transform: uppercase;
+  }
+
+  .tag-combat  { color: #d04040; border-color: rgba(180,40,40,0.35); background: rgba(180,40,40,0.08); }
+  .tag-stealth { color: #708860; border-color: rgba(90,130,60,0.35); background: rgba(90,130,60,0.08); }
+  .tag-tech    { color: #8090b8; border-color: rgba(80,110,180,0.35); background: rgba(80,110,180,0.08); }
+  .tag-social  { color: #a08050; border-color: rgba(160,120,50,0.35); background: rgba(160,120,50,0.08); }
+
+  .quest-right { text-align: right; flex-shrink: 0; }
+
+  .quest-reward {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--orange);
+    letter-spacing: 1px;
+  }
+  .quest-reward::before { content: '¥'; font-size: 11px; margin-right: 1px; color: var(--red-dim); }
+  .quest-item.done .quest-reward { color: var(--text-dim); }
+
+  .quest-xp {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-top: 2px;
+  }
+  .quest-item.done .quest-xp { color: #3a3030; }
+
+  /* PROGRESS */
+  .progress-section {
+    margin: 4px 20px 16px 20px;
+    border: 1px solid var(--border);
+    background: rgba(0,0,0,0.2);
+  }
+
+  .progress-top {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .progress-info { flex: 1; padding: 14px 16px; }
+
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+
+  .prog-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+
+  .prog-val { font-size: 14px; font-weight: 700; color: var(--text-hi); letter-spacing: 1px; }
+  .prog-val span { color: var(--text-dim); font-weight: 400; font-size: 12px; }
+
+  .bar-track {
+    height: 5px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid var(--border);
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--red), var(--orange));
+    box-shadow: 0 0 8px rgba(193,68,14,0.6);
+    animation: fill-in 1.2s cubic-bezier(0.4,0,0.2,1) both;
+  }
+
+  .bar-fill.xp {
+    background: linear-gradient(90deg, #304060, #5070a0);
+    box-shadow: 0 0 8px rgba(50,80,140,0.5);
+  }
+
+  .bar-fill.last { margin-bottom: 0; }
+
+  .reward-col {
+    border-left: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(193,68,14,0.04);
+    min-width: 130px;
+  }
+
+  .reward-col-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    color: var(--text-dim);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .reward-big {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+
+  .reward-big::before { content: '¥'; font-size: 16px; color: var(--red-dim); margin-right: 2px; }
+
+  .reward-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    color: var(--orange);
+    letter-spacing: 2px;
+    margin-top: 5px;
+  }
+
+  .progress-bottom {
+    display: flex;
+    padding: 10px 16px;
+    gap: 24px;
+  }
+
+  .mini-stat { display: flex; align-items: center; gap: 8px; }
+
+  .mini-stat-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .mini-stat-val { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: 1px; }
+
+  .mini-stat-sep { width: 1px; height: 20px; background: var(--border); }
+
+  /* FOOTER */
+  .footer {
+    border-top: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel2);
+  }
+
+  .footer-left { display: flex; align-items: center; gap: 8px; }
+
+  .footer-status {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+  }
+
+  .footer-status em { font-style: normal; color: var(--text); }
+
+  .footer-logo { font-size: 11px; font-weight: 700; color: var(--text-dim); letter-spacing: 4px; text-transform: uppercase; }
+
+  .timer-block {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-align: right;
+  }
+
+  .timer-val { font-size: 14px; color: var(--red); letter-spacing: 3px; display: block; margin-top: 2px; }
+
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  @keyframes fill-in { from { width: 0 !important; } }
+
+  .quest-item { animation: slide-in 0.35s both; }
+  .quest-item:nth-child(1) { animation-delay: 0.05s; }
+  .quest-item:nth-child(2) { animation-delay: 0.12s; }
+  .quest-item:nth-child(3) { animation-delay: 0.19s; }
+  .quest-item:nth-child(4) { animation-delay: 0.26s; }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(-16px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* Segment bars */
+  .seg-bar {
+    display: flex;
+    gap: 4px;
+    cursor: pointer;
+  }
+
+  .seg {
+    flex: 1;
+    height: 14px;
+    border: 1px solid var(--border2);
+    background: rgba(0,0,0,0.35);
+    position: relative;
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+  }
+
+  .seg.lit {
+    background: linear-gradient(90deg, var(--red), var(--orange));
+    border-color: var(--orange);
+    box-shadow: 0 0 8px rgba(193,68,14,0.7), inset 0 0 6px rgba(255,255,255,0.1);
+  }
+
+  .seg.full {
+    background: linear-gradient(90deg, #70c040, #a0e060);
+    border-color: #90d050;
+    box-shadow: 0 0 10px rgba(120,200,60,0.6), inset 0 0 6px rgba(255,255,255,0.1);
+  }
+
+  .seg:hover { border-color: var(--orange); }
+
+  /* Quest done overlay */
+  .quest-item.done .seg-bar { opacity: 0.7; }
+  .quest-item.done .quest-name { color: var(--text-dim); text-decoration: line-through; text-decoration-color: var(--red-dim); }
+
+  /* Reward unlocked */
+  .reward-unlocked {
+    border-color: rgba(120,200,60,0.4) !important;
+    background: rgba(100,180,40,0.08) !important;
+  }
+
+  .reward-unlocked #reward-icon {
+    font-size: 28px;
+    border-color: rgba(120,200,60,0.5);
+    box-shadow: 0 0 16px rgba(120,200,60,0.4);
+    background: rgba(80,160,20,0.15);
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="bg-grid"></div>
+  <div class="card">
+
+    <div class="header">
+      <div class="header-bar"></div>
+      <div class="header-inner">
+        <div>
+          <div class="sys-tag">// BODY_AUGMENTATION · TRAINING_PROTOCOL</div>
+          <div class="title">DAILY QUESTS</div>
+          <div class="title-sub">Physical Enhancement Programme</div>
+        </div>
+        <div class="header-right">
+          <div class="date-line">
+            DATE <strong id="hdr-date"></strong><br>
+            COMPLETED <strong id="hdr-done">0 / 4</strong><br>
+            STATUS <strong id="hdr-status">PENDING</strong>
+          </div>
+          <div class="status-badge">
+            <div class="status-dot"></div>
+            <span class="status-text">Active Protocol</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-hdr" style="padding-top:20px;">
+      <span class="section-hdr-label">Objectives</span>
+      <div class="section-hdr-line"></div>
+    </div>
+
+    <div class="quests">
+
+      <!-- PULL-UPS -->
+      <div class="quest-item" id="pullups-item">
+        <div class="quest-info" style="flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="quest-name">PULL-UPS</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:1px;">
+                <span id="pu-count" style="font-size:16px;font-weight:700;color:var(--text-hi);">0</span>
+                <span style="color:var(--text-dim);"> / 20</span>
+              </div>
+              <div class="quest-check" id="pu-check" onclick="toggleCheck('pullups-item','pu-check')"></div>
+            </div>
+          </div>
+          <div class="seg-bar" data-id="pu" data-max="4" data-step="5" data-count-id="pu-count" data-item-id="pullups-item" data-check-id="pu-check">
+            <div class="seg" data-seg="1"></div>
+            <div class="seg" data-seg="2"></div>
+            <div class="seg" data-seg="3"></div>
+            <div class="seg" data-seg="4"></div>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);margin-top:5px;letter-spacing:2px;">5 REPS PER SEGMENT</div>
+        </div>
+      </div>
+
+      <!-- PUSH-UPS -->
+      <div class="quest-item" id="pushups-item">
+        <div class="quest-info" style="flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="quest-name">PUSH-UPS</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--text-dim);letter-spacing:1px;">
+                <span id="push-count" style="font-size:16px;font-weight:700;color:var(--text-hi);">0</span>
+                <span style="color:var(--text-dim);"> / 50</span>
+              </div>
+              <div class="quest-check" id="push-check" onclick="toggleCheck('pushups-item','push-check')"></div>
+            </div>
+          </div>
+          <div class="seg-bar" data-id="push" data-max="5" data-step="10" data-count-id="push-count" data-item-id="pushups-item" data-check-id="push-check">
+            <div class="seg" data-seg="1"></div>
+            <div class="seg" data-seg="2"></div>
+            <div class="seg" data-seg="3"></div>
+            <div class="seg" data-seg="4"></div>
+            <div class="seg" data-seg="5"></div>
+          </div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);margin-top:5px;letter-spacing:2px;">10 REPS PER SEGMENT</div>
+        </div>
+      </div>
+
+      <!-- CORE -->
+      <div class="quest-item" id="core-item" onclick="toggleCheck('core-item','core-check')" style="cursor:pointer;">
+        <div class="quest-info" style="flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="quest-name">CORE</div>
+            <div class="quest-check" id="core-check"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2KM RUN -->
+      <div class="quest-item" id="run-item" onclick="toggleCheck('run-item','run-check')" style="cursor:pointer;">
+        <div class="quest-info" style="flex:1;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div class="quest-name">2KM RUN</div>
+            <div class="quest-check" id="run-check"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- DIVIDER -->
+    <div style="margin:0 20px;height:1px;background:linear-gradient(90deg,var(--red),var(--border2),transparent);"></div>
+
+    <!-- REWARD -->
+    <div class="reward-unlocked-target" style="margin:0 20px 16px;border:1px solid var(--border);border-top:none;background:rgba(193,68,14,0.06);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;transition:all 0.4s;">
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:4px;text-transform:uppercase;margin-bottom:4px;">Mission Reward</div>
+        <div style="font-size:22px;font-weight:800;color:var(--white);letter-spacing:3px;text-transform:uppercase;">10% BONUS CALORIES</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:8px;color:var(--text-dim);letter-spacing:2px;margin-top:3px;">COMPLETE ALL OBJECTIVES TO UNLOCK</div>
+      </div>
+      <div id="reward-icon" style="width:52px;height:52px;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text-dim);background:rgba(0,0,0,0.3);transition:all 0.4s;">🔒</div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        <div class="status-dot"></div>
+        <span class="footer-status">SYS ONLINE · TRAINER: <em>V-BODY PROTOCOL</em></span>
+      </div>
+      <div class="footer-logo">Night City // 2077</div>
+      <div class="timer-block">
+        RESETS IN
+        <span class="timer-val" id="timer">06:42:17</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── DATE ──
+  const days = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const months = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const now = new Date();
+  const todayKey = `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+  document.getElementById('hdr-date').textContent =
+    `${days[now.getDay()]} · ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+  // ── STORAGE ──
+  function saveState() {
+    const state = {
+      date: todayKey,
+      segBars: segBarStates,
+      checks: {
+        core: document.getElementById('core-item').classList.contains('done'),
+        run:  document.getElementById('run-item').classList.contains('done')
+      }
+    };
+    localStorage.setItem('dq_state', JSON.stringify(state));
+  }
+
+  function loadState() {
+    try {
+      const raw = localStorage.getItem('dq_state');
+      if (!raw) return null;
+      const state = JSON.parse(raw);
+      // Reset if it's a new day
+      if (state.date !== todayKey) {
+        localStorage.removeItem('dq_state');
+        return null;
+      }
+      return state;
+    } catch(e) { return null; }
+  }
+
+  // ── COUNTDOWN ──
+  const midnight = new Date(); midnight.setHours(24,0,0,0);
+  const t = document.getElementById('timer');
+  function updateTimer() {
+    const diff = Math.max(0, Math.floor((midnight - new Date()) / 1000));
+    const h = String(Math.floor(diff/3600)).padStart(2,'0');
+    const m = String(Math.floor((diff%3600)/60)).padStart(2,'0');
+    const s = String(diff%60).padStart(2,'0');
+    t.textContent = `${h}:${m}:${s}`;
+  }
+  updateTimer();
+  setInterval(updateTimer, 1000);
+
+  // Segment bars — click to light up one segment at a time
+  const segBarStates = {};
+
+  function refreshBar(bar) {
+    const id      = bar.dataset.id;
+    const segs    = bar.querySelectorAll('.seg');
+    const max     = parseInt(bar.dataset.max);
+    const step    = parseInt(bar.dataset.step);
+    const countEl = document.getElementById(bar.dataset.countId);
+    const itemEl  = document.getElementById(bar.dataset.itemId);
+    const checkEl = document.getElementById(bar.dataset.checkId);
+    const lit     = segBarStates[id] || 0;
+
+    segs.forEach((s, i) => {
+      s.classList.remove('lit', 'full');
+      if (i < lit) s.classList.add(lit === max ? 'full' : 'lit');
+    });
+    countEl.textContent = lit * step;
+    if (lit === max) {
+      itemEl.classList.add('done');
+      checkEl.textContent = '✕';
+      checkEl.style.cursor = 'pointer';
+      checkEl.title = 'Click to reset';
+    } else {
+      itemEl.classList.remove('done');
+      checkEl.textContent = '';
+      checkEl.style.cursor = 'default';
+      checkEl.title = '';
+    }
+    updateHeader();
+    checkAllDone();
+    saveState();
+  }
+
+  document.querySelectorAll('.seg-bar').forEach(bar => {
+    const id   = bar.dataset.id;
+    const max  = parseInt(bar.dataset.max);
+    segBarStates[id] = 0;
+
+    bar.querySelectorAll('.seg').forEach((seg, i) => {
+      seg.addEventListener('click', e => {
+        e.stopPropagation();
+        const lit = segBarStates[id];
+        if (i === lit - 1) {
+          segBarStates[id] = i;
+        } else if (i < lit - 1) {
+          segBarStates[id] = i;
+        } else {
+          segBarStates[id] = i + 1;
+        }
+        refreshBar(bar);
+      });
+    });
+  });
+
+  // Simple checkbox toggle (core, run)
+  function toggleCheck(itemId, checkId) {
+    const item  = document.getElementById(itemId);
+    const check = document.getElementById(checkId);
+    // for seg-bar items, only allow unchecking (resetting) when fully done
+    if (item.querySelector('.seg-bar')) {
+      if (item.classList.contains('done')) {
+        // reset the bar back to zero
+        const bar = item.querySelector('.seg-bar');
+        const barId = bar.dataset.id;
+        segBarStates[barId] = 0;
+        refreshBar(bar);
+      }
+      return;
+    }
+    const done = item.classList.toggle('done');
+    check.textContent = done ? '✕' : '';
+    updateHeader();
+    checkAllDone();
+    saveState();
+  }
+
+  function updateHeader() {
+    const total = 4;
+    const done  = document.querySelectorAll('.quest-item.done').length;
+    document.getElementById('hdr-done').textContent = `${done} / ${total}`;
+    document.getElementById('hdr-status').textContent =
+      done === 0 ? 'PENDING' : done === total ? 'COMPLETE' : 'IN PROGRESS';
+  }
+
+  function checkAllDone() {
+    const all = document.querySelectorAll('.quest-item').length;
+    const done = document.querySelectorAll('.quest-item.done').length;
+    const rewardBox = document.querySelector('.reward-unlocked-target');
+    if (done === all) {
+      rewardBox.classList.add('reward-unlocked');
+      document.getElementById('reward-icon').textContent = '🔥';
+    } else {
+      rewardBox.classList.remove('reward-unlocked');
+      document.getElementById('reward-icon').textContent = '🔒';
+    }
+  }
+
+  // ── RESTORE SAVED STATE ──
+  const saved = loadState();
+  if (saved) {
+    // Restore seg bars
+    document.querySelectorAll('.seg-bar').forEach(bar => {
+      const id = bar.dataset.id;
+      if (saved.segBars && saved.segBars[id] !== undefined) {
+        segBarStates[id] = saved.segBars[id];
+        refreshBar(bar);
+      }
+    });
+    // Restore simple checkboxes
+    if (saved.checks) {
+      if (saved.checks.core) {
+        document.getElementById('core-item').classList.add('done');
+        document.getElementById('core-check').textContent = '✕';
+      }
+      if (saved.checks.run) {
+        document.getElementById('run-item').classList.add('done');
+        document.getElementById('run-check').textContent = '✕';
+      }
+    }
+    updateHeader();
+    checkAllDone();
+  }
+</script>
+</body>
+</html>
