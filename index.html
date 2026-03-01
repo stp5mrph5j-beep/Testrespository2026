@@ -60,7 +60,8 @@
   }
 
   .container {
-    width: 700px;
+    width: 100%;
+    max-width: 700px;
     position: relative;
   }
 
@@ -107,10 +108,11 @@
 
   .header-inner {
     flex: 1;
-    padding: 20px 24px 16px;
+    padding: 16px 16px 14px;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
+    gap: 12px;
   }
 
   .sys-tag {
@@ -123,10 +125,10 @@
   }
 
   .title {
-    font-size: 36px;
+    font-size: clamp(22px, 5vw, 36px);
     font-weight: 800;
     color: var(--white);
-    letter-spacing: 4px;
+    letter-spacing: 3px;
     text-transform: uppercase;
     line-height: 1;
     position: relative;
@@ -143,10 +145,10 @@
   }
 
   .title-sub {
-    font-size: 12px;
+    font-size: clamp(8px, 2vw, 12px);
     font-weight: 400;
     color: var(--text-dim);
-    letter-spacing: 5px;
+    letter-spacing: 3px;
     margin-top: 10px;
     text-transform: uppercase;
   }
@@ -157,8 +159,9 @@
     font-family: 'Share Tech Mono', monospace;
     font-size: 10px;
     color: var(--text-dim);
-    letter-spacing: 2px;
+    letter-spacing: 1px;
     line-height: 2;
+    white-space: nowrap;
   }
 
   .date-line strong { color: var(--text); font-weight: 400; }
@@ -593,11 +596,9 @@
           <div class="title-sub">Physical Enhancement Programme</div>
         </div>
         <div class="header-right">
-          <div class="date-line">
-            DATE <strong id="hdr-date"></strong><br>
-            COMPLETED <strong id="hdr-done">0 / 4</strong><br>
-            STATUS <strong id="hdr-status">PENDING</strong>
-          </div>
+          <div class="date-line" style="white-space:nowrap;">DATE <strong id="hdr-date"></strong></div>
+          <div class="date-line" style="white-space:nowrap;">DONE <strong id="hdr-done">0 / 4</strong></div>
+          <div class="date-line" style="white-space:nowrap;">STATUS <strong id="hdr-status">PENDING</strong></div>
           <div class="status-badge">
             <div class="status-dot"></div>
             <span class="status-text">Active Protocol</span>
@@ -700,7 +701,6 @@
         <div class="status-dot"></div>
         <span class="footer-status">SYS ONLINE · TRAINER: <em>V-BODY PROTOCOL</em></span>
       </div>
-      <div class="footer-logo">Night City // 2077</div>
       <div class="timer-block">
         RESETS IN
         <span class="timer-val" id="timer">06:42:17</span>
@@ -885,3 +885,4 @@
 </script>
 </body>
 </html>
+
